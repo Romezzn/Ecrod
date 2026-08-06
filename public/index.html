@@ -202,17 +202,22 @@
 
       <!-- Chat Input Area -->
       <div class="chat-input-container">
+        <!-- Floating Attachment Preview Pill -->
+        <div id="attachmentPreview" class="attachment-preview-floating hidden glass-card-glow">
+          <img id="attachmentImg" src="" alt="Adjunto">
+          <div class="attachment-info">
+            <span class="attachment-label"><i class="fa-solid fa-image"></i> Imagen lista para enviar</span>
+          </div>
+          <button type="button" id="removeAttachmentBtn" class="btn-icon-sm danger-text" title="Quitar adjunto">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
         <form id="chatForm" class="chat-input-wrapper glass-input">
-          <label for="attachmentInput" class="input-btn-icon" title="Adjuntar imagen/archivo">
+          <label for="attachmentInput" class="input-btn-icon btn-add-file" title="Adjuntar imagen/archivo">
             <i class="fa-solid fa-circle-plus"></i>
             <input type="file" id="attachmentInput" accept="image/*" class="hidden-file-input">
           </label>
-          
-          <!-- Attachment Preview Box -->
-          <div id="attachmentPreview" class="attachment-preview hidden">
-            <img id="attachmentImg" src="" alt="Adjunto">
-            <button type="button" id="removeAttachmentBtn" class="remove-attachment-btn"><i class="fa-solid fa-xmark"></i></button>
-          </div>
 
           <input type="text" id="messageInput" placeholder="Enviar mensaje a #general..." autocomplete="off">
           

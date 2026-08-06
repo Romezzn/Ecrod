@@ -163,21 +163,54 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAvatarPreview(randomSeed);
   });
 
+  const loginSubmitBtn = loginForm.querySelector('button[type="submit"]');
+
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const username = usernameInput.value.trim();
-    const serverUrl = serverUrlInput.value.trim() || 'http://sg.dimzo.es:9090';
+    let serverUrl = serverUrlInput.value.trim() || 'http://sg.dimzo.es:9090';
+    
     if (!username) return;
+
+    if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+      serverUrl = 'http://' + serverUrl;
+    }
 
     localStorage.setItem('emergency_username', username);
     const avatar = avatarPreview.src;
+    const userColor = getRandomColor();
 
-    if (serverUrl !== window.location.origin) {
+    const originalBtnHTML = loginSubmitBtn.innerHTML;
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+
+    const sendJoin = () => {
+      socket.emit('user:join', { username, avatar, color: userColor });
+    };
+
+    const timeout = setTimeout(() => {
+      loginSubmitBtn.disabled = false;
+      loginSubmitBtn.innerHTML = originalBtnHTML;
+      alert(`⚠️ No se pudo conectar al servidor (${serverUrl}).\n\nAsegúrate de que el contenedor Docker esté encendido y el puerto 9090 abierto.`);
+    }, 7000);
+
+    // If socket needs to connect to new URL or reconnect
+    if (!socket || !socket.connected || (socket.io && socket.io.uri !== serverUrl)) {
       connectSocket(serverUrl);
+      socket.once('connect', () => {
+        clearTimeout(timeout);
+        sendJoin();
+      });
+      socket.once('connect_error', (err) => {
+        clearTimeout(timeout);
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.innerHTML = originalBtnHTML;
+        alert(`❌ Error al conectar a ${serverUrl}: ` + (err.message || 'Servidor no disponible'));
+      });
+    } else {
+      clearTimeout(timeout);
+      sendJoin();
     }
-
-    // Send Join Event
-    socket.emit('user:join', { username, avatar, color: getRandomColor() });
   });
 
   function getRandomColor() {
@@ -191,6 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('init:state', (data) => {
       currentUser = data.user;
       channels = data.channels;
+
+      loginSubmitBtn.disabled = false;
+      loginSubmitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Conectar al Servidor';
 
       loginModal.classList.add('hidden');
       appContainer.classList.remove('hidden');
