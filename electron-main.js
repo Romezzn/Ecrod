@@ -85,7 +85,7 @@ function checkForUpdates() {
       res.on('end', () => {
         try {
           const json = JSON.parse(data);
-          if (json.version && json.version !== CURRENT_VERSION) {
+          if (json.version && isNewerVersion(json.version, CURRENT_VERSION)) {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               buttons: ['Actualizar Ahora', 'Luego'],

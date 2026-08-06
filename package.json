@@ -1,6 +1,6 @@
 {
   "name": "emergency-cord",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Discord backup web app ultra rápido para servidor Docker",
   "main": "electron-main.js",
   "scripts": {
