@@ -207,8 +207,22 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('users:update', (userList) => {
       onlineUsers = userList;
       renderMembersList();
+      renderChannels();
       onlineCountText.textContent = `${userList.length} ${userList.length === 1 ? 'usuario' : 'usuarios'}`;
       onlineMembersCount.textContent = userList.length;
+    });
+
+    socket.on('voice:users', (data) => {
+      renderChannels();
+    });
+
+    socket.on('voice:speaking_update', (data) => {
+      const user = onlineUsers.find(u => u.id === data.userId);
+      if (user) {
+        user.isSpeaking = data.isSpeaking;
+        renderChannels();
+        renderMembersList();
+      }
     });
 
     socket.on('user:joined', (user) => {
@@ -266,11 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
     voiceChannelsList.innerHTML = '';
 
     channels.forEach(ch => {
-      const li = document.createElement('li');
-      li.className = `channel-item ${ch.id === currentChannel ? 'active' : ''}`;
-      li.dataset.id = ch.id;
-
       if (ch.type === 'text') {
+        const li = document.createElement('li');
+        li.className = `channel-item ${ch.id === currentChannel ? 'active' : ''}`;
+        li.dataset.id = ch.id;
         li.innerHTML = `
           <div class="channel-item-left">
             <i class="fa-solid fa-hashtag channel-icon"></i>
@@ -280,15 +293,48 @@ document.addEventListener('DOMContentLoaded', () => {
         li.addEventListener('click', () => switchTextChannel(ch.id));
         textChannelsList.appendChild(li);
       } else if (ch.type === 'voice') {
-        li.innerHTML = `
-          <div class="channel-item-left">
-            <i class="fa-solid fa-volume-high channel-icon"></i>
-            <span>${escapeHTML(ch.name)}</span>
+        const wrapper = document.createElement('li');
+        wrapper.className = 'channel-wrapper';
+        
+        const isCurrentVoice = activeVoiceChannel === ch.id;
+        
+        // Find users in this voice channel
+        const usersInThisChannel = onlineUsers.filter(u => u.voiceChannel === ch.id);
+
+        let usersHTML = '';
+        if (usersInThisChannel.length > 0) {
+          usersHTML = `<div class="voice-channel-users">`;
+          usersInThisChannel.forEach(u => {
+            const speakingClass = u.isSpeaking ? 'speaking' : '';
+            const muteIcon = u.isMuted ? '<i class="fa-solid fa-microphone-slash voice-icon-muted" title="Silenciado"></i>' : '';
+            const deafenIcon = u.isDeafened ? '<i class="fa-solid fa-volume-xmark voice-icon-muted" title="Ensordecido"></i>' : '';
+
+            usersHTML += `
+              <div class="voice-user-subitem ${speakingClass}">
+                <div class="voice-user-avatar-wrap ${speakingClass}">
+                  <img src="${u.avatar}" alt="${escapeHTML(u.username)}">
+                </div>
+                <span class="voice-user-name" style="color: ${u.color || '#a1a1aa'}">${escapeHTML(u.username)}</span>
+                <div class="voice-user-icons">${muteIcon}${deafenIcon}</div>
+              </div>
+            `;
+          });
+          usersHTML += `</div>`;
+        }
+
+        wrapper.innerHTML = `
+          <div class="channel-item voice-channel-header ${isCurrentVoice ? 'active-voice' : ''}" data-id="${ch.id}">
+            <div class="channel-item-left">
+              <i class="fa-solid fa-volume-high channel-icon"></i>
+              <span>${escapeHTML(ch.name)}</span>
+            </div>
+            <span class="member-voice-badge"><i class="fa-solid fa-infinity"></i> Slots</span>
           </div>
-          <span class="member-voice-badge"><i class="fa-solid fa-infinity"></i> Slots</span>
+          ${usersHTML}
         `;
-        li.addEventListener('click', () => joinVoiceChannel(ch.id, ch.name));
-        voiceChannelsList.appendChild(li);
+
+        wrapper.querySelector('.channel-item').addEventListener('click', () => joinVoiceChannel(ch.id, ch.name));
+        voiceChannelsList.appendChild(wrapper);
       }
     });
   }
