@@ -465,21 +465,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Voice & Audio Engine (VAD / PTT & WebRTC Noise Suppression) ---
 
-  async function joinVoiceChannel(channelId, channelName) {
-    if (activeVoiceChannel === channelId) return;
+  async function requestMicrophoneAccess() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert(
+        '⚠️ ATENCIÓN SOBRE PERMISOS DE MICRÓFONO:\n\n' +
+        'Los navegadores (Chrome/Edge/Firefox) solo permiten usar el micrófono en sitios seguros (HTTPS) o en http://localhost.\n\n' +
+        'Si estás accediendo desde la IP de tu servidor (ej: http://192.168.x.x:9090):\n' +
+        '1. Usa una conexión HTTPS (Reverse Proxy / Nginx / Traefik)\n' +
+        '2. O en Chrome abre "chrome://flags/#unsafely-treat-insecure-origin-as-secure", añade la URL de tu servidor y habilítala.'
+      );
+      return null;
+    }
 
     try {
-      // Audio Constraints with WebRTC Noise Suppression
-      const constraints = {
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: settings.micDeviceId !== 'default' ? { exact: settings.micDeviceId } : undefined,
           noiseSuppression: settings.noiseSuppression,
           echoCancellation: settings.echoCancellation,
           autoGainControl: true
         }
-      };
+      });
+      // Re-enumerate devices to get human readable labels after permission granted
+      enumerateInputDevices();
+      return stream;
+    } catch (err) {
+      console.error('Error pidiendo permiso de micrófono:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        alert('🚫 Permiso de micrófono denegado en el navegador. Por favor haz clic en el icono del candado/micrófono junto a la barra de dirección URL de tu navegador y selecciona "Permitir".');
+      } else {
+        alert('⚠️ No se pudo activar el micrófono: ' + (err.message || err.name));
+      }
+      return null;
+    }
+  }
 
-      mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+  async function joinVoiceChannel(channelId, channelName) {
+    if (activeVoiceChannel === channelId) return;
+
+    const stream = await requestMicrophoneAccess();
+    if (!stream) return;
+
+    try {
+      mediaStream = stream;
       setupAudioProcessing(mediaStream);
 
       activeVoiceChannel = channelId;
@@ -488,8 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       socket.emit('voice:join', { channelId });
     } catch (err) {
-      console.error('Error accediendo al micrófono:', err);
-      alert('No se pudo acceder al micrófono. Por favor permite los permisos de audio.');
+      console.error('Error al unirse al canal de voz:', err);
     }
   }
 
@@ -592,12 +619,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Voice Settings Modal Logic ---
 
-  openSettingsBtn.addEventListener('click', () => {
+  openSettingsBtn.addEventListener('click', async () => {
     settingsModal.classList.remove('hidden');
+    await enumerateInputDevices();
   });
 
-  closeSettingsBtn.addEventListener('click', () => {
-    settingsModal.classList.add('hidden');
+  testMicBtn.addEventListener('click', async () => {
+    testMicBtn.textContent = 'Solicitando permiso...';
+    const stream = await requestMicrophoneAccess();
+    if (stream) {
+      testMicBtn.textContent = '✅ Micrófono Activo';
+      setupAudioProcessing(stream);
+    } else {
+      testMicBtn.textContent = '❌ Sin Permiso';
+    }
+    setTimeout(() => {
+      testMicBtn.textContent = 'Probar Micrófono';
+    }, 3000);
   });
 
   modeVAD.addEventListener('change', () => {
