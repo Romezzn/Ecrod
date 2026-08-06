@@ -466,6 +466,25 @@ body {
   color: var(--text-muted);
   letter-spacing: 0.5px;
   padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-add-channel {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.btn-add-channel:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .margin-top {

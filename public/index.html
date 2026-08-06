@@ -101,6 +101,7 @@
         <!-- Text Channels List -->
         <div class="channel-category">
           <span><i class="fa-solid fa-chevron-down"></i> CANALES DE TEXTO</span>
+          <button id="addTextChannelBtn" class="btn-add-channel" title="Crear Canal de Texto"><i class="fa-solid fa-plus"></i></button>
         </div>
         <ul id="textChannelsList" class="channel-list">
           <!-- Populated by JS -->
@@ -108,7 +109,8 @@
 
         <!-- Voice Channels List -->
         <div class="channel-category margin-top">
-          <span><i class="fa-solid fa-chevron-down"></i> CANALES DE VOZ (SLOTS ILIMITADOS)</span>
+          <span><i class="fa-solid fa-chevron-down"></i> CANALES DE VOZ</span>
+          <button id="addVoiceChannelBtn" class="btn-add-channel" title="Crear Canal de Voz"><i class="fa-solid fa-plus"></i></button>
         </div>
         <ul id="voiceChannelsList" class="channel-list">
           <!-- Populated by JS -->
@@ -319,9 +321,52 @@
 
       </div>
 
-      <div class="settings-footer">
-        <button id="saveSettingsBtn" class="btn-primary-glow"><i class="fa-solid fa-check"></i> Guardar y Aplicar</button>
+  <!-- Create Channel Modal -->
+  <div id="createChannelModal" class="modal-overlay hidden">
+    <div class="settings-card glass-card-glow">
+      <div class="settings-header">
+        <h3><i class="fa-solid fa-plus"></i> Crear Canal</h3>
+        <button id="closeCreateChannelBtn" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
       </div>
+
+      <form id="createChannelForm">
+        <div class="settings-body">
+          <div class="setting-item">
+            <label><i class="fa-solid fa-layer-group"></i> TIPO DE CANAL</label>
+            <div class="radio-options">
+              <label class="radio-card glass-radio">
+                <input type="radio" name="newChannelType" value="text" id="newTypeText" checked>
+                <div class="radio-content">
+                  <span class="radio-title"><i class="fa-solid fa-hashtag"></i> Canal de Texto</span>
+                  <span class="radio-desc">Publica imágenes, emojis, opiniones y mensajes.</span>
+                </div>
+              </label>
+
+              <label class="radio-card glass-radio">
+                <input type="radio" name="newChannelType" value="voice" id="newTypeVoice">
+                <div class="radio-content">
+                  <span class="radio-title"><i class="fa-solid fa-volume-high"></i> Canal de Voz</span>
+                  <span class="radio-desc">Habla en vivo con audio de voz y supresión de ruido.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label for="newChannelNameInput"><i class="fa-solid fa-pen"></i> NOMBRE DEL CANAL</label>
+            <input type="text" id="newChannelNameInput" class="form-select-glass" placeholder="Ej: general-2, gaming, ayuda-vps..." maxlength="30" required autocomplete="off">
+          </div>
+
+          <div class="setting-item">
+            <label for="newChannelTopicInput"><i class="fa-solid fa-comment-dots"></i> TEMA / DESCRIPCIÓN (OPCIONAL)</label>
+            <input type="text" id="newChannelTopicInput" class="form-select-glass" placeholder="Ej: Sala para hablar de juegos y dudas" maxlength="80" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="settings-footer">
+          <button type="submit" class="btn-primary-glow"><i class="fa-solid fa-check"></i> Crear Canal</button>
+        </div>
+      </form>
     </div>
   </div>
 

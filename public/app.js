@@ -204,6 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
       enumerateInputDevices();
     });
 
+    socket.on('channels:update', (updatedChannels) => {
+      channels = updatedChannels;
+      renderChannels();
+    });
+
     socket.on('users:update', (userList) => {
       onlineUsers = userList;
       renderMembersList();
@@ -748,6 +753,57 @@ document.addEventListener('DOMContentLoaded', () => {
       joinVoiceChannel(channelId, channelName);
     }
   });
+
+  // --- Dynamic Channel Creation Logic ---
+  const addTextChannelBtn = document.getElementById('addTextChannelBtn');
+  const addVoiceChannelBtn = document.getElementById('addVoiceChannelBtn');
+  const createChannelModal = document.getElementById('createChannelModal');
+  const closeCreateChannelBtn = document.getElementById('closeCreateChannelBtn');
+  const createChannelForm = document.getElementById('createChannelForm');
+  const newChannelNameInput = document.getElementById('newChannelNameInput');
+  const newChannelTopicInput = document.getElementById('newChannelTopicInput');
+  const newTypeText = document.getElementById('newTypeText');
+  const newTypeVoice = document.getElementById('newTypeVoice');
+
+  if (addTextChannelBtn) {
+    addTextChannelBtn.addEventListener('click', () => {
+      newTypeText.checked = true;
+      newChannelNameInput.value = '';
+      newChannelTopicInput.value = '';
+      createChannelModal.classList.remove('hidden');
+      newChannelNameInput.focus();
+    });
+  }
+
+  if (addVoiceChannelBtn) {
+    addVoiceChannelBtn.addEventListener('click', () => {
+      newTypeVoice.checked = true;
+      newChannelNameInput.value = '';
+      newChannelTopicInput.value = '';
+      createChannelModal.classList.remove('hidden');
+      newChannelNameInput.focus();
+    });
+  }
+
+  if (closeCreateChannelBtn) {
+    closeCreateChannelBtn.addEventListener('click', () => {
+      createChannelModal.classList.add('hidden');
+    });
+  }
+
+  if (createChannelForm) {
+    createChannelForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = newChannelNameInput.value.trim();
+      const topic = newChannelTopicInput.value.trim();
+      const type = newTypeText.checked ? 'text' : 'voice';
+
+      if (!name) return;
+
+      socket.emit('channel:create', { name, type, topic });
+      createChannelModal.classList.add('hidden');
+    });
+  }
 
   async function enumerateInputDevices() {
     try {

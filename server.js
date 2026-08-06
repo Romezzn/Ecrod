@@ -99,11 +99,33 @@ io.on('connection', (socket) => {
     user.currentChannel = channelId;
     users.set(socket.id, user);
 
-    // Send channel message history
     socket.emit('channel:history', {
       channelId,
       messages: channelMessages[channelId] || []
     });
+  });
+
+  // Dynamic Channel Creation Event
+  socket.on('channel:create', ({ name, type, topic }) => {
+    if (!name) return;
+    const cleanName = type === 'text' ? name.trim().toLowerCase().replace(/\s+/g, '-') : name.trim();
+    const channelId = `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+
+    const newChannel = {
+      id: channelId,
+      name: cleanName,
+      type: type === 'voice' ? 'voice' : 'text',
+      topic: topic ? topic.trim() : (type === 'text' ? 'Canal de conversación' : '')
+    };
+
+    CHANNELS.push(newChannel);
+
+    if (type === 'text') {
+      channelMessages[channelId] = [];
+    }
+
+    // Broadcast updated channels list to all connected clients
+    io.emit('channels:update', CHANNELS);
   });
 
   // Text Message Sending
