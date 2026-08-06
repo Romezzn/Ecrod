@@ -1,11 +1,53 @@
 /**
- * EmergencyCord — Client JavaScript
- * Real-time Discord Backup Web Application
+ * EmergencyCord — Client JavaScript (Ultra Glassmorphism & Windows Desktop Client)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Socket.io Connection
-  const socket = io();
+  // Detect Electron Desktop App environment
+  let ipcRenderer = null;
+  const isElectron = typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+  
+  if (isElectron) {
+    try {
+      const electron = window.require('electron');
+      ipcRenderer = electron.ipcRenderer;
+    } catch (e) {
+      console.log('Electron IPC not available');
+    }
+  }
+
+  // Windows Titlebar IPC Controls
+  const winMinBtn = document.getElementById('winMinBtn');
+  const winMaxBtn = document.getElementById('winMaxBtn');
+  const winCloseBtn = document.getElementById('winCloseBtn');
+  const windowTitlebar = document.getElementById('windowTitlebar');
+
+  if (isElectron && ipcRenderer) {
+    windowTitlebar.style.display = 'flex';
+    winMinBtn.addEventListener('click', () => ipcRenderer.send('window-minimize'));
+    winMaxBtn.addEventListener('click', () => ipcRenderer.send('window-maximize'));
+    winCloseBtn.addEventListener('click', () => ipcRenderer.send('window-close'));
+  } else {
+    // Hide native titlebar controls on standard web browsers
+    windowTitlebar.style.display = 'none';
+  }
+
+  // Dynamic Socket.IO connection
+  let socket = null;
+
+  function connectSocket(targetUrl) {
+    if (socket) socket.disconnect();
+    
+    // Default to sg.dimzo.es:9090 if accessed from web or custom input
+    const cleanUrl = targetUrl || window.location.origin;
+    console.log(`🔌 Conectando Socket.IO a: ${cleanUrl}`);
+    socket = io(cleanUrl, { reconnectionAttempts: 5 });
+    
+    setupSocketListeners();
+  }
+
+  // Initial connection
+  connectSocket(window.location.origin.includes('file:') ? 'http://sg.dimzo.es:9090' : window.location.origin);
 
   // State Management
   let currentUser = null;
@@ -26,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   let settings = {
     micDeviceId: 'default',
-    inputMode: 'vad', // 'vad' (voice activity detection) or 'ptt' (push-to-talk)
+    inputMode: 'vad',
     pttKey: 'Space',
     noiseSuppression: true,
     echoCancellation: true
@@ -42,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginModal = document.getElementById('loginModal');
   const loginForm = document.getElementById('loginForm');
   const usernameInput = document.getElementById('usernameInput');
+  const serverUrlInput = document.getElementById('serverUrlInput');
   const avatarPreview = document.getElementById('avatarPreview');
   const randomAvatarBtn = document.getElementById('randomAvatarBtn');
 
@@ -96,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const micMeterFill = document.getElementById('micMeterFill');
   const testMicBtn = document.getElementById('testMicBtn');
 
-  // Load Saved Username or Avatar from LocalStorage
+  // Load Saved Username from LocalStorage
   const savedUsername = localStorage.getItem('emergency_username');
   if (savedUsername) {
     usernameInput.value = savedUsername;
@@ -123,101 +166,98 @@ document.addEventListener('DOMContentLoaded', () => {
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const username = usernameInput.value.trim();
+    const serverUrl = serverUrlInput.value.trim() || 'http://sg.dimzo.es:9090';
     if (!username) return;
 
     localStorage.setItem('emergency_username', username);
     const avatar = avatarPreview.src;
+
+    if (serverUrl !== window.location.origin) {
+      connectSocket(serverUrl);
+    }
 
     // Send Join Event
     socket.emit('user:join', { username, avatar, color: getRandomColor() });
   });
 
   function getRandomColor() {
-    const colors = ['#5865F2', '#57F287', '#FEE75C', '#EB459E', '#ED4245', '#99AAB5'];
+    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f43f5e', '#f59e0b'];
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
-  // --- Socket Event Listeners ---
+  // --- Socket Listeners Setup ---
 
-  socket.on('init:state', (data) => {
-    currentUser = data.user;
-    channels = data.channels;
+  function setupSocketListeners() {
+    socket.on('init:state', (data) => {
+      currentUser = data.user;
+      channels = data.channels;
 
-    // Hide Login Modal & Show Main App
-    loginModal.classList.add('hidden');
-    appContainer.classList.remove('hidden');
+      loginModal.classList.add('hidden');
+      appContainer.classList.remove('hidden');
 
-    // Update User Footer
-    myUsername.textContent = currentUser.username;
-    myAvatarImg.src = currentUser.avatar;
+      myUsername.textContent = currentUser.username;
+      myAvatarImg.src = currentUser.avatar;
 
-    // Play Join Sound
-    soundJoin.play().catch(() => {});
-
-    // Render Channels
-    renderChannels();
-    
-    // Render Initial Messages
-    renderMessages(data.messages);
-
-    // Enumerate Microphones for Settings
-    enumerateInputDevices();
-  });
-
-  socket.on('users:update', (userList) => {
-    onlineUsers = userList;
-    renderMembersList();
-    onlineCountText.textContent = `${userList.length} ${userList.length === 1 ? 'usuario' : 'usuarios'}`;
-    onlineMembersCount.textContent = userList.length;
-  });
-
-  socket.on('user:joined', (user) => {
-    if (currentUser && user.id !== currentUser.id) {
-      appendSystemMessage(`👋 **${escapeHTML(user.username)}** se ha unido a la sala.`);
-    }
-  });
-
-  socket.on('user:left', (userId) => {
-    const user = onlineUsers.find(u => u.id === userId);
-    if (user) {
-      appendSystemMessage(`❌ **${escapeHTML(user.username)}** ha salido del chat.`);
-    }
-  });
-
-  socket.on('channel:history', (data) => {
-    if (data.channelId === currentChannel) {
+      soundJoin.play().catch(() => {});
+      renderChannels();
       renderMessages(data.messages);
-    }
-  });
+      enumerateInputDevices();
+    });
 
-  socket.on('message:new', (data) => {
-    if (data.channelId === currentChannel) {
-      appendMessage(data.message);
-      if (currentUser && data.message.username !== currentUser.username) {
-        soundMessage.play().catch(() => {});
+    socket.on('users:update', (userList) => {
+      onlineUsers = userList;
+      renderMembersList();
+      onlineCountText.textContent = `${userList.length} ${userList.length === 1 ? 'usuario' : 'usuarios'}`;
+      onlineMembersCount.textContent = userList.length;
+    });
+
+    socket.on('user:joined', (user) => {
+      if (currentUser && user.id !== currentUser.id) {
+        appendSystemMessage(`👋 **${escapeHTML(user.username)}** se ha unido a la sala.`);
       }
-    }
-  });
+    });
 
-  // Typing updates
-  let typingUsers = new Set();
-  socket.on('typing:update', (data) => {
-    if (data.channelId !== currentChannel) return;
+    socket.on('user:left', (userId) => {
+      const user = onlineUsers.find(u => u.id === userId);
+      if (user) {
+        appendSystemMessage(`❌ **${escapeHTML(user.username)}** ha salido del chat.`);
+      }
+    });
 
-    if (data.isTyping) {
-      typingUsers.add(data.username);
-    } else {
-      typingUsers.delete(data.username);
-    }
+    socket.on('channel:history', (data) => {
+      if (data.channelId === currentChannel) {
+        renderMessages(data.messages);
+      }
+    });
 
-    if (typingUsers.size > 0) {
-      const names = Array.from(typingUsers).join(', ');
-      typingText.textContent = `${names} ${typingUsers.size === 1 ? 'está' : 'están'} escribiendo...`;
-      typingIndicator.classList.remove('hidden');
-    } else {
-      typingIndicator.classList.add('hidden');
-    }
-  });
+    socket.on('message:new', (data) => {
+      if (data.channelId === currentChannel) {
+        appendMessage(data.message);
+        if (currentUser && data.message.username !== currentUser.username) {
+          soundMessage.play().catch(() => {});
+        }
+      }
+    });
+
+    let typingUsers = new Set();
+    socket.on('typing:update', (data) => {
+      if (data.channelId !== currentChannel) return;
+
+      if (data.isTyping) {
+        typingUsers.add(data.username);
+      } else {
+        typingUsers.delete(data.username);
+      }
+
+      if (typingUsers.size > 0) {
+        const names = Array.from(typingUsers).join(', ');
+        typingText.textContent = `${names} ${typingUsers.size === 1 ? 'está' : 'están'} escribiendo...`;
+        typingIndicator.classList.remove('hidden');
+      } else {
+        typingIndicator.classList.add('hidden');
+      }
+    });
+  }
 
   // --- Channel Rendering & Switching ---
 
@@ -257,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentChannel === channelId) return;
     currentChannel = channelId;
     
-    // Update Channel Name Header
     const chObj = channels.find(c => c.id === channelId);
     if (chObj) {
       currentChannelName.textContent = chObj.name;
@@ -265,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
       messageInput.placeholder = `Enviar mensaje a #${chObj.name}...`;
     }
 
-    // Highlight active in UI
     document.querySelectorAll('#textChannelsList .channel-item').forEach(el => {
       el.classList.toggle('active', el.dataset.id === channelId);
     });
@@ -306,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <img class="message-avatar" src="${msg.avatar}" alt="${escapeHTML(msg.username)}">
         <div class="message-body">
           <div class="message-header">
-            <span class="message-author" style="color: ${msg.color || '#5865F2'}">${escapeHTML(msg.username)}</span>
+            <span class="message-author" style="color: ${msg.color || '#6366f1'}">${escapeHTML(msg.username)}</span>
             <span class="message-timestamp">${msg.timestamp}</span>
           </div>
           <div class="message-content">
@@ -326,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
       id: `sys-${Date.now()}`,
       username: 'Sistema',
       avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SystemAlert',
-      color: '#99AAB5',
+      color: '#71717a',
       content: text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSystem: true
@@ -337,15 +375,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!text) return '';
     let escaped = escapeHTML(text);
     
-    // Code blocks ```code```
     escaped = escaped.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-    // Inline code `code`
     escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Bold **text**
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    // Italic *text*
     escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    // Auto-link URLs
     escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
     
     return escaped;
@@ -388,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('typing:stop', { channelId: currentChannel });
   });
 
-  // Handle Image Attachment
   attachmentInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -416,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
     attachmentPreview.classList.add('hidden');
   }
 
-  // Emoji Picker Toggle
   emojiPickerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     emojiPicker.classList.toggle('hidden');
@@ -456,24 +487,24 @@ document.addEventListener('DOMContentLoaded', () => {
           <img src="${u.avatar}" alt="${escapeHTML(u.username)}">
           <span class="status-indicator online"></span>
         </div>
-        <span class="member-name" style="color: ${u.color || '#949ba4'}">${escapeHTML(u.username)}</span>
+        <span class="member-name" style="color: ${u.color || '#a1a1aa'}">${escapeHTML(u.username)}</span>
         ${voiceBadge}
       `;
       membersList.appendChild(li);
     });
   }
 
-  // --- Voice & Audio Engine (VAD / PTT & WebRTC Noise Suppression) ---
+  // --- Voice Engine (Native Windows Electron & WebRTC Noise Suppression) ---
 
   async function requestMicrophoneAccess() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert(
-        '⚠️ ATENCIÓN SOBRE PERMISOS DE MICRÓFONO:\n\n' +
-        'Los navegadores (Chrome/Edge/Firefox) solo permiten usar el micrófono en sitios seguros (HTTPS) o en http://localhost.\n\n' +
-        'Si estás accediendo desde la IP de tu servidor (ej: http://192.168.x.x:9090):\n' +
-        '1. Usa una conexión HTTPS (Reverse Proxy / Nginx / Traefik)\n' +
-        '2. O en Chrome abre "chrome://flags/#unsafely-treat-insecure-origin-as-secure", añade la URL de tu servidor y habilítala.'
-      );
+      if (!isElectron) {
+        alert(
+          '⚠️ SOBRE PERMISOS DE MICRÓFONO EN NAVEGADOR:\n\n' +
+          'Los navegadores bloquean el micrófono en HTTP sin cifrar.\n\n' +
+          '💡 SOLUCIÓN FÁCIL: Usa el Cliente de Escritorio de Windows (Electron) que se conecta directamente a sg.dimzo.es:9090 sin esta restricción.'
+        );
+      }
       return null;
     }
 
@@ -486,13 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
           autoGainControl: true
         }
       });
-      // Re-enumerate devices to get human readable labels after permission granted
       enumerateInputDevices();
       return stream;
     } catch (err) {
-      console.error('Error pidiendo permiso de micrófono:', err);
+      console.error('Error al pedir micrófono:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert('🚫 Permiso de micrófono denegado en el navegador. Por favor haz clic en el icono del candado/micrófono junto a la barra de dirección URL de tu navegador y selecciona "Permitir".');
+        alert('🚫 Permiso de micrófono denegado. Por favor dale acceso al micrófono.');
       } else {
         alert('⚠️ No se pudo activar el micrófono: ' + (err.message || err.name));
       }
@@ -538,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
     analyser.fftSize = 512;
     source.connect(analyser);
 
-    // Start Voice Activity Detection Loop
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     
     clearInterval(vadInterval);
@@ -551,12 +580,10 @@ document.addEventListener('DOMContentLoaded', () => {
         sum += dataArray[i];
       }
       const averageVolume = sum / dataArray.length;
-
-      // Update mic test meter if settings open
       micMeterFill.style.width = Math.min(100, averageVolume * 3) + '%';
 
       if (settings.inputMode === 'vad') {
-        const threshold = 15; // Threshold for automatic voice activation
+        const threshold = 15;
         const nowSpeaking = averageVolume > threshold;
         setSpeakingState(nowSpeaking);
       } else if (settings.inputMode === 'ptt') {
@@ -585,7 +612,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setSpeakingState(false);
   }
 
-  // Push-To-Talk Keyboard Listeners
   document.addEventListener('keydown', (e) => {
     if (settings.inputMode === 'ptt' && activeVoiceChannel && !isMuted) {
       if (e.code === settings.pttKey || e.key === settings.pttKey) {
@@ -602,7 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Mute & Deafen Controls
   toggleMuteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     toggleMuteBtn.classList.toggle('active-mute', isMuted);
@@ -625,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   testMicBtn.addEventListener('click', async () => {
-    testMicBtn.textContent = 'Solicitando permiso...';
+    testMicBtn.textContent = 'Solicitando...';
     const stream = await requestMicrophoneAccess();
     if (stream) {
       testMicBtn.textContent = '✅ Micrófono Activo';
@@ -636,6 +661,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       testMicBtn.textContent = 'Probar Micrófono';
     }, 3000);
+  });
+
+  closeSettingsBtn.addEventListener('click', () => {
+    settingsModal.classList.add('hidden');
   });
 
   modeVAD.addEventListener('change', () => {
@@ -666,7 +695,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     settingsModal.classList.add('hidden');
 
-    // Re-initialize audio stream if active
     if (activeVoiceChannel) {
       const channelId = activeVoiceChannel;
       const channelName = activeVoiceChannelName.textContent;

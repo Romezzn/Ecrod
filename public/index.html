@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmergencyCord — Servidor de Chat de Respaldo</title>
-  <meta name="description" content="Sistema de chat y voz ultrarrápido y liviano estilo Discord para respaldos de emergencia. Sin cuenta necesaria.">
+  <title>EmergencyCord — Ultra Glassmorphism</title>
+  <meta name="description" content="Sistema de chat y voz ultrarrápido estilo Discord con diseño Ultra Glassmorphism para Web y Cliente Windows.">
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Stylesheet -->
@@ -16,15 +16,33 @@
 </head>
 <body>
 
-  <!-- Overlay: Login Modal (Sin Cuentas, Ingreso Instantáneo) -->
+  <!-- Custom Glassmorphism Windows Titlebar (Active in Desktop Client) -->
+  <div id="windowTitlebar" class="window-titlebar glass-titlebar">
+    <div class="titlebar-drag-region">
+      <i class="fa-solid fa-bolt-lightning titlebar-logo"></i>
+      <span class="titlebar-text">EmergencyCord — <small id="titlebarServerTag">sg.dimzo.es:9090</small></span>
+    </div>
+    <div class="titlebar-controls">
+      <button id="winMinBtn" class="win-btn" title="Minimizar"><i class="fa-solid fa-minus"></i></button>
+      <button id="winMaxBtn" class="win-btn" title="Maximizar"><i class="fa-regular fa-square"></i></button>
+      <button id="winCloseBtn" class="win-btn close" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <!-- Ambient Glow Background Spheres for Ultra Glassmorphism -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Overlay: Login Modal (Sin Cuentas, Ingreso Instantáneo + Selección de Servidor) -->
   <div id="loginModal" class="modal-overlay">
-    <div class="login-card glass-panel">
+    <div class="login-card glass-card-glow">
       <div class="login-header">
-        <div class="app-logo">
+        <div class="app-logo glass-icon">
           <i class="fa-solid fa-bolt-lightning"></i>
         </div>
         <h2>EmergencyCord</h2>
-        <p>Chat de respaldo en tiempo real sin registro. Ingresa tu usuario y entra ya.</p>
+        <p>Cliente de Respaldo Ultra Glassmorphism. Ingresa tu usuario y conéctate.</p>
       </div>
 
       <form id="loginForm" class="login-form">
@@ -33,22 +51,27 @@
           <input type="text" id="usernameInput" placeholder="Ej: Alex_Dev, Carlos, invitado..." maxlength="24" required autofocus autocomplete="off">
         </div>
 
+        <div class="form-group">
+          <label for="serverUrlInput"><i class="fa-solid fa-server"></i> SERVIDOR DOCKER</label>
+          <input type="text" id="serverUrlInput" value="http://sg.dimzo.es:9090" placeholder="http://sg.dimzo.es:9090" required autocomplete="off">
+        </div>
+
         <div class="avatar-selection">
           <label><i class="fa-solid fa-robot"></i> TU AVATAR</label>
-          <div class="avatar-preview-box">
+          <div class="avatar-preview-box glass-box">
             <img id="avatarPreview" src="https://api.dicebear.com/7.x/bottts/svg?seed=EmergencyCord" alt="Avatar Preview">
-            <button type="button" id="randomAvatarBtn" class="btn-secondary" title="Generar Avatar Aleatorio">
+            <button type="button" id="randomAvatarBtn" class="btn-glass" title="Generar Avatar Aleatorio">
               <i class="fa-solid fa-dice"></i> Cambiar
             </button>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary btn-large">
-          <i class="fa-solid fa-right-to-bracket"></i> Entrar a la Sala
+        <button type="submit" class="btn-primary-glow btn-large">
+          <i class="fa-solid fa-right-to-bracket"></i> Conectar al Servidor
         </button>
       </form>
       <div class="login-footer">
-        <span><i class="fa-solid fa-shield-halved"></i> Conexión ultra rápida a tu servidor privado Docker</span>
+        <span><i class="fa-solid fa-shield-halved"></i> Cliente optimizado para Windows & Web Docker</span>
       </div>
     </div>
   </div>
@@ -57,21 +80,21 @@
   <div id="app" class="app-layout hidden">
 
     <!-- 1. Server Bar (Far Left) -->
-    <nav class="server-sidebar">
-      <div class="server-icon active" title="EmergencyCord Server">
+    <nav class="server-sidebar glass-sidebar">
+      <div class="server-icon active-glass" title="EmergencyCord Server">
         <i class="fa-solid fa-bolt-lightning"></i>
       </div>
       <div class="server-separator"></div>
       <div class="server-status-pill" title="Servidor En Línea">
-        <span class="online-dot"></span>
+        <span class="online-dot-glow"></span>
       </div>
     </nav>
 
     <!-- 2. Channels Sidebar (Left) -->
-    <aside class="channels-sidebar">
+    <aside class="channels-sidebar glass-sidebar">
       <div class="server-header">
         <h3>EmergencyCord <i class="fa-solid fa-circle-check verified-badge"></i></h3>
-        <span class="server-badge">Docker Backup</span>
+        <span class="server-badge-glass">sg.dimzo.es:9090</span>
       </div>
 
       <div class="channels-scroll">
@@ -92,8 +115,8 @@
         </ul>
       </div>
 
-      <!-- Voice Connected Status Panel (Shown when connected to voice) -->
-      <div id="voiceStatusPanel" class="voice-status-panel hidden">
+      <!-- Voice Connected Status Panel -->
+      <div id="voiceStatusPanel" class="voice-status-panel glass-panel-sm hidden">
         <div class="voice-info">
           <i class="fa-solid fa-signal voice-signal-icon"></i>
           <div class="voice-text">
@@ -109,7 +132,7 @@
       </div>
 
       <!-- Current User Footer Card -->
-      <div class="user-footer">
+      <div class="user-footer glass-user-card">
         <div class="user-avatar-wrap">
           <img id="myAvatarImg" src="" alt="User Avatar">
           <span class="status-indicator online"></span>
@@ -133,17 +156,17 @@
     </aside>
 
     <!-- 3. Main Chat View (Center) -->
-    <main class="chat-main">
+    <main class="chat-main glass-chat-area">
       <!-- Chat Header -->
-      <header class="chat-header">
+      <header class="chat-header glass-header">
         <div class="channel-header-title">
           <i class="fa-solid fa-hashtag header-icon"></i>
           <h2 id="currentChannelName">general</h2>
           <span id="currentChannelTopic" class="channel-topic">Sala principal de conversación</span>
         </div>
         <div class="chat-header-actions">
-          <div class="header-status-badge">
-            <span class="online-dot"></span> <span id="onlineCountText">1 usuario</span>
+          <div class="header-status-badge glass-badge">
+            <span class="online-dot-glow"></span> <span id="onlineCountText">1 usuario</span>
           </div>
           <button id="toggleMembersBtn" class="btn-icon-sm" title="Lista de Miembros">
             <i class="fa-solid fa-users"></i>
@@ -166,7 +189,7 @@
 
       <!-- Chat Input Area -->
       <div class="chat-input-container">
-        <form id="chatForm" class="chat-input-wrapper">
+        <form id="chatForm" class="chat-input-wrapper glass-input">
           <label for="attachmentInput" class="input-btn-icon" title="Adjuntar imagen/archivo">
             <i class="fa-solid fa-circle-plus"></i>
             <input type="file" id="attachmentInput" accept="image/*" class="hidden-file-input">
@@ -184,14 +207,14 @@
             <button type="button" id="emojiPickerBtn" class="input-btn-icon" title="Insertar Emoji">
               <i class="fa-solid fa-face-smile"></i>
             </button>
-            <button type="submit" class="btn-send" title="Enviar">
+            <button type="submit" class="btn-send-glow" title="Enviar">
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </div>
         </form>
 
         <!-- Quick Emoji Popup -->
-        <div id="emojiPicker" class="emoji-picker-popup hidden glass-panel">
+        <div id="emojiPicker" class="emoji-picker-popup hidden glass-card-glow">
           <div class="emoji-grid">
             <span>👍</span><span>😂</span><span>🔥</span><span>❤️</span><span>🎉</span>
             <span>🚀</span><span>😎</span><span>👀</span><span>💯</span><span>🙌</span>
@@ -202,7 +225,7 @@
     </main>
 
     <!-- 4. Members Sidebar (Right) -->
-    <aside id="membersSidebar" class="members-sidebar">
+    <aside id="membersSidebar" class="members-sidebar glass-sidebar">
       <div class="members-header">
         <span>EN LÍNEA — <span id="onlineMembersCount">1</span></span>
       </div>
@@ -215,7 +238,7 @@
 
   <!-- Settings Modal (Configuración del Usuario: Voz & Krisp Noise Suppression) -->
   <div id="settingsModal" class="modal-overlay hidden">
-    <div class="settings-card glass-panel">
+    <div class="settings-card glass-card-glow">
       <div class="settings-header">
         <h3><i class="fa-solid fa-sliders"></i> Ajustes de Voz y Sonido</h3>
         <button id="closeSettingsBtn" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
@@ -225,7 +248,7 @@
         <!-- Input Device -->
         <div class="setting-item">
           <label for="micSelect"><i class="fa-solid fa-microphone"></i> Dispositivo de Entrada (Micrófono)</label>
-          <select id="micSelect" class="form-select">
+          <select id="micSelect" class="form-select-glass">
             <option value="default">Micrófono Predeterminado del Sistema</option>
           </select>
         </div>
@@ -234,7 +257,7 @@
         <div class="setting-item">
           <label><i class="fa-solid fa-headset"></i> Modo de Entrada de Voz</label>
           <div class="radio-options">
-            <label class="radio-card">
+            <label class="radio-card glass-radio">
               <input type="radio" name="inputMode" value="vad" id="modeVAD" checked>
               <div class="radio-content">
                 <span class="radio-title"><i class="fa-solid fa-wave-square"></i> Activación por Voz Automática</span>
@@ -242,7 +265,7 @@
               </div>
             </label>
 
-            <label class="radio-card">
+            <label class="radio-card glass-radio">
               <input type="radio" name="inputMode" value="ptt" id="modePTT">
               <div class="radio-content">
                 <span class="radio-title"><i class="fa-solid fa-keyboard"></i> Pulsar para Hablar (Push-To-Talk)</span>
@@ -255,7 +278,7 @@
         <!-- Push to talk key selector -->
         <div id="pttKeyGroup" class="setting-item hidden">
           <label for="pttKeyInput"><i class="fa-solid fa-key"></i> Tecla de Pulsar para Hablar</label>
-          <input type="text" id="pttKeyInput" class="form-input-short" value="Space" readonly>
+          <input type="text" id="pttKeyInput" class="form-input-short glass-input" value="Space" readonly>
           <span class="help-text">Haz clic e ingresa la tecla deseada (ej. Espacio, Control, Shift).</span>
         </div>
 
@@ -263,7 +286,7 @@
         <div class="setting-item row-between">
           <div class="setting-text">
             <span class="setting-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Cancelación de Ruido Inteligente</span>
-            <span class="setting-desc">Elimina el ruido de fondo (teclado, ventiladores) usando procesamiento WebRTC nativo.</span>
+            <span class="setting-desc">Elimina el ruido de fondo (teclado, ventiladores) usando procesamiento WebRTC.</span>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="noiseSuppressionToggle" checked>
@@ -287,17 +310,17 @@
         <div class="setting-item">
           <label><i class="fa-solid fa-chart-simple"></i> Prueba de Micrófono</label>
           <div class="mic-test-container">
-            <div class="mic-meter-bar">
+            <div class="mic-meter-bar glass-meter">
               <div id="micMeterFill" class="mic-meter-fill"></div>
             </div>
-            <button id="testMicBtn" class="btn-secondary btn-sm">Probar Micrófono</button>
+            <button id="testMicBtn" class="btn-glass btn-sm">Probar Micrófono</button>
           </div>
         </div>
 
       </div>
 
       <div class="settings-footer">
-        <button id="saveSettingsBtn" class="btn-primary"><i class="fa-solid fa-check"></i> Guardar y Aplicar</button>
+        <button id="saveSettingsBtn" class="btn-primary-glow"><i class="fa-solid fa-check"></i> Guardar y Aplicar</button>
       </div>
     </div>
   </div>

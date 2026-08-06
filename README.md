@@ -1,62 +1,43 @@
-# ⚡ EmergencyCord — Discord Backup Web App
+# ⚡ EmergencyCord — Ultra Glassmorphism (Web & Cliente Windows)
 
-Un clon de Discord ultra rápido, ligero y con un diseño moderno diseñado para ser alojado en tu propio servidor con Docker. 
-
-**Ideal como respaldo de emergencia:** Si Discord deja de funcionar, levantas este contenedor en segundos y toda tu comunidad o equipo puede comunicarse inmediatamente sin crear cuentas.
+Un clon de Discord ultra rápido, ligero y con un diseño de **Cristal Ultra Glassmorphism** diseñado para ser alojado en tu servidor Docker y usado desde la **Web** o como **Cliente Nativo de Escritorio para Windows (Electron)**.
 
 ---
 
-## ✨ Características Principal
+## ✨ Novedades
 
-- 🚀 **Cero Cuentas / Registro**: Solo ingresas tu nombre de usuario y entras instantáneamente.
-- 🎨 **Diseño idéntico a Discord Dark Mode**: Blurple (#5865F2), paneles de cristal, lista de canales, miembros conectados e interfaz fluida.
-- 💬 **Mensajería en Tiempo Real con WebSockets**: Soporte para múltiples canales (`#general`, `#emergencia`, `#gaming`), formato Markdown (`**negrita**`, `\`código\``, enlaces), adjunto de imágenes y selector de emojis.
-- 🔊 **Voz Avanzada con Slots Ilimitados**:
-  - **Activación por Voz Automática (VAD)** con filtro de sensibilidad.
-  - **Pulsar para Hablar (Push-To-Talk)** con tecla configurable.
-  - **Cancelación de Ruido Inteligente (Krisp style)** y cancelación de eco vía WebRTC.
-  - **Indicador de habla**: Anillos de luz verde palpitante en el avatar de quien está hablando.
-- 🐳 **Despliegue con Docker en 1 Comando**: Consumo inferior a 30 MB de RAM.
+- 🖥️ **Cliente Nativo de Escritorio para Windows**: Permisos de micrófono 100% nativos de Windows sin ninguna restricción de navegador HTTP/HTTPS.
+- 🌐 **Conexión Directa a tu Servidor**: Configurado para conectar a `http://sg.dimzo.es:9090` (o cualquier servidor personalizado).
+- 💎 **Diseño Ultra Glassmorphic**: Cristal esmerilado (`backdrop-filter: blur(28px)`), esferas de luz neón ambiente, bordes translúcidos y barra de ventana personalizada para Windows.
+- 🚀 **Sin Registro ni Cuentas**: Ingresa tu usuario y entra en 1 segundo.
+- 🔊 **Voz Avanzada**: Activación por voz (VAD), Pulsar para Hablar (PTT), Cancelación de ruido inteligente y slots ilimitados.
 
 ---
 
-## 🚀 Cómo Desplegar con Docker (1 Paso)
+## 💻 Cómo Iniciar el Cliente de Windows (Escritorio)
 
-En tu servidor VPS o equipo local, ejecuta:
+En tu equipo con Node.js instalado, ejecuta:
 
 ```bash
-docker compose up -d
-```
+# 1. Instalar dependencias (si no lo has hecho)
+npm install
 
-¡Y listo! La aplicación estará disponible en:
-`http://tu-servidor:9090` (o `http://localhost:9090`)
-
-### Detener el contenedor
-```bash
-docker compose down
+# 2. Ejecutar la Aplicación de Escritorio de Windows
+npm run electron
 ```
 
 ---
 
-## 💻 Ejecución en Modo Desarrollo (sin Docker)
+## 🐳 Cómo Desplegar el Servidor en tu VPS Docker (`sg.dimzo.es:9090`)
 
-Si deseas probarlo localmente con Node.js:
+En tu servidor Docker:
 
-1. Instala dependencias:
-   ```bash
-   npm install
-   ```
-2. Inicia el servidor:
-   ```bash
-   npm start
-   ```
-3. Abre en tu navegador [http://localhost:3000](http://localhost:3000)
+```bash
+# 1. Actualizar repositorio
+git pull origin main
 
----
+# 2. Reconstruir e iniciar contenedor
+docker compose up -d --build
+```
 
-## 🛠️ Tecnologías Utilizadas
-
-- **Backend**: Node.js, Express, Socket.IO
-- **Frontend**: HTML5, CSS Vanilla (Discord Dark Theme), JavaScript ES6
-- **Audio & Voz**: WebRTC Audio API + Web Audio API (Analizadores de Frecuencia VAD & Supresión de Ruido)
-- **Contenedor**: Docker / Docker Compose (Alpine base)
+Servidor listo en el puerto **`9090`** (`http://sg.dimzo.es:9090`).
