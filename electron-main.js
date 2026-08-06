@@ -28,8 +28,8 @@ function createWindow() {
     callback(true);
   });
 
-  // Load app (can connect to http://sg.dimzo.es:9090 or local server)
-  const serverUrl = process.env.SERVER_URL || 'http://localhost:9090';
+  // Load app (connects to http://sg.dimzo.es:9090 by default in standalone .exe)
+  const serverUrl = process.env.SERVER_URL || 'http://sg.dimzo.es:9090';
   mainWindow.loadURL(serverUrl).catch(() => {
     mainWindow.loadFile(path.join(__dirname, 'public/index.html'));
   });
