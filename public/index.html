@@ -172,6 +172,9 @@
           <span id="currentChannelTopic" class="channel-topic">Sala principal de conversación</span>
         </div>
         <div class="chat-header-actions">
+          <button id="toggleOverlayBtn" class="btn-glass-sm btn-overlay-highlight" title="Activar Overlay de Juegos Flotante (Shift + F3)">
+            <i class="fa-solid fa-gamepad"></i> Overlay Juegos
+          </button>
           <a href="/download/EmergencyCord-Portable.exe" class="btn-glass-sm" download title="Descargar Cliente Portable para Windows (.exe)">
             <i class="fa-brands fa-windows"></i> Descargar App
           </a>
@@ -244,6 +247,31 @@
       </ul>
     </aside>
 
+  </div>
+
+  <!-- Floating Game Overlay Widget (Game HUD overlay active over full screen games) -->
+  <div id="gameOverlayWidget" class="game-overlay-widget glass-card-glow hidden">
+    <div class="overlay-header">
+      <div class="overlay-title">
+        <i class="fa-solid fa-gamepad"></i>
+        <span id="overlayVoiceChannelName">🔊 Sin Voz</span>
+      </div>
+      <div class="overlay-shortcut-hint">
+        <span>Shift + F3</span>
+        <button id="closeOverlayBtn" class="btn-icon-sm" title="Desactivar Overlay"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+
+    <!-- Active Voice Users Floating Avatars -->
+    <div id="overlayVoiceUsersList" class="overlay-users-list">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Mini Chat Message Toast -->
+    <div id="overlayChatToast" class="overlay-chat-toast hidden">
+      <span id="overlayToastAuthor" class="toast-author">Alex</span>
+      <span id="overlayToastContent" class="toast-content">¡Vente a B!</span>
+    </div>
   </div>
 
   <!-- Settings Modal (Configuración del Usuario: Voz & Krisp Noise Suppression) -->

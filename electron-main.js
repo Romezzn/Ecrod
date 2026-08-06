@@ -50,6 +50,28 @@ function createWindow() {
   });
   ipcMain.on('window-close', () => mainWindow.close());
 
+  // Game Overlay IPC handlers
+  ipcMain.on('overlay-enable', () => {
+    if (mainWindow) {
+      mainWindow.setAlwaysOnTop(true, 'screen-saver');
+      mainWindow.setSkipTaskbar(true);
+    }
+  });
+
+  ipcMain.on('overlay-disable', () => {
+    if (mainWindow) {
+      mainWindow.setAlwaysOnTop(false);
+      mainWindow.setSkipTaskbar(false);
+    }
+  });
+
+  ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setIgnoreMouseEvents(ignore, options || { forward: true });
+    }
+  });
+
   // Check for auto-updates after 3 seconds
   setTimeout(checkForUpdates, 3000);
 }

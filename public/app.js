@@ -213,12 +213,14 @@ document.addEventListener('DOMContentLoaded', () => {
       onlineUsers = userList;
       renderMembersList();
       renderChannels();
+      updateOverlayState();
       onlineCountText.textContent = `${userList.length} ${userList.length === 1 ? 'usuario' : 'usuarios'}`;
       onlineMembersCount.textContent = userList.length;
     });
 
     socket.on('voice:users', (data) => {
       renderChannels();
+      updateOverlayState();
     });
 
     socket.on('voice:speaking_update', (data) => {
@@ -227,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         user.isSpeaking = data.isSpeaking;
         renderChannels();
         renderMembersList();
+        updateOverlayState();
       }
     });
 
@@ -254,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage(data.message);
         if (currentUser && data.message.username !== currentUser.username) {
           soundMessage.play().catch(() => {});
+          showOverlayToast(data.message.username, data.message.content);
         }
       }
     });
@@ -804,6 +808,90 @@ document.addEventListener('DOMContentLoaded', () => {
       createChannelModal.classList.add('hidden');
     });
   }
+
+  // --- Floating Game Overlay HUD Logic ---
+  const toggleOverlayBtn = document.getElementById('toggleOverlayBtn');
+  const closeOverlayBtn = document.getElementById('closeOverlayBtn');
+  const gameOverlayWidget = document.getElementById('gameOverlayWidget');
+  const overlayVoiceChannelName = document.getElementById('overlayVoiceChannelName');
+  const overlayVoiceUsersList = document.getElementById('overlayVoiceUsersList');
+  const overlayChatToast = document.getElementById('overlayChatToast');
+  const overlayToastAuthor = document.getElementById('overlayToastAuthor');
+  const overlayToastContent = document.getElementById('overlayToastContent');
+
+  let isOverlayActive = false;
+
+  function toggleGameOverlay() {
+    isOverlayActive = !isOverlayActive;
+
+    if (isOverlayActive) {
+      gameOverlayWidget.classList.remove('hidden');
+      appContainer.classList.add('hidden');
+
+      if (isElectron && ipcRenderer) {
+        ipcRenderer.send('overlay-enable');
+      }
+      updateOverlayState();
+    } else {
+      gameOverlayWidget.classList.add('hidden');
+      appContainer.classList.remove('hidden');
+
+      if (isElectron && ipcRenderer) {
+        ipcRenderer.send('overlay-disable');
+      }
+    }
+  }
+
+  function updateOverlayState() {
+    if (!isOverlayActive) return;
+
+    if (activeVoiceChannel) {
+      const ch = channels.find(c => c.id === activeVoiceChannel);
+      overlayVoiceChannelName.textContent = ch ? ch.name : '🔊 Sala de Voz';
+      
+      const voiceUsers = onlineUsers.filter(u => u.voiceChannel === activeVoiceChannel);
+      overlayVoiceUsersList.innerHTML = '';
+
+      voiceUsers.forEach(u => {
+        const speakingClass = u.isSpeaking ? 'speaking' : '';
+        const card = document.createElement('div');
+        card.className = 'overlay-user-card';
+        card.innerHTML = `
+          <div class="overlay-avatar-wrap ${speakingClass}">
+            <img src="${u.avatar}" alt="${escapeHTML(u.username)}">
+          </div>
+          <span class="overlay-user-name" style="color: ${u.color || '#ffffff'}">${escapeHTML(u.username)}</span>
+        `;
+        overlayVoiceUsersList.appendChild(card);
+      });
+    } else {
+      overlayVoiceChannelName.textContent = '🔊 Sin canal de voz conectado';
+      overlayVoiceUsersList.innerHTML = '<span style="font-size:12px; color:#71717a;">Únete a un canal de voz para ver la lista en tu juego.</span>';
+    }
+  }
+
+  // Toast notifications for overlay when a new message arrives
+  function showOverlayToast(author, content) {
+    if (!isOverlayActive) return;
+    overlayToastAuthor.textContent = author;
+    overlayToastContent.textContent = content.substring(0, 40) + (content.length > 40 ? '...' : '');
+    overlayChatToast.classList.remove('hidden');
+
+    setTimeout(() => {
+      overlayChatToast.classList.add('hidden');
+    }, 4000);
+  }
+
+  if (toggleOverlayBtn) toggleOverlayBtn.addEventListener('click', toggleGameOverlay);
+  if (closeOverlayBtn) closeOverlayBtn.addEventListener('click', toggleGameOverlay);
+
+  // Global shortcut Shift + F3 for Overlay Mode toggle
+  document.addEventListener('keydown', (e) => {
+    if (e.shiftKey && (e.key === 'F3' || e.code === 'F3')) {
+      e.preventDefault();
+      toggleGameOverlay();
+    }
+  });
 
   async function enumerateInputDevices() {
     try {
