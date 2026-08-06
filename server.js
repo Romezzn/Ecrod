@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,8 +14,32 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e7 // 10MB limit for image attachments
 });
 
+const APP_VERSION = '1.1.0';
+
 // Middleware & Static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Version API Endpoint for Auto-updater
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: APP_VERSION,
+    downloadUrl: '/download/EmergencyCord-Portable.exe'
+  });
+});
+
+// Download Route for Windows Standalone Executable
+app.get('/download/EmergencyCord-Portable.exe', (req, res) => {
+  const distExePath = path.join(__dirname, 'dist', 'EmergencyCord-Portable.exe');
+  const publicExePath = path.join(__dirname, 'public', 'EmergencyCord-Portable.exe');
+  
+  if (fs.existsSync(distExePath)) {
+    return res.download(distExePath, 'EmergencyCord-Portable.exe');
+  } else if (fs.existsSync(publicExePath)) {
+    return res.download(publicExePath, 'EmergencyCord-Portable.exe');
+  } else {
+    return res.status(404).send('El ejecutable de Windows no está disponible aún en el servidor.');
+  }
+});
 
 // Default Channels Setup
 const CHANNELS = [
