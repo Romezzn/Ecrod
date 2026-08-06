@@ -14,7 +14,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e7 // 10MB limit for image attachments
 });
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 // Middleware & Static files
 app.use(express.static(path.join(__dirname, 'public')));
