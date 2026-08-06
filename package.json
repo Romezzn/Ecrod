@@ -1,0 +1,14 @@
+{
+  "name": "emergency-cord",
+  "version": "1.0.0",
+  "description": "Discord backup web app ultra rápido para servidor Docker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

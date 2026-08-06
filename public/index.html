@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmergencyCord — Servidor de Chat de Respaldo</title>
+  <meta name="description" content="Sistema de chat y voz ultrarrápido y liviano estilo Discord para respaldos de emergencia. Sin cuenta necesaria.">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Overlay: Login Modal (Sin Cuentas, Ingreso Instantáneo) -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="login-card glass-panel">
+      <div class="login-header">
+        <div class="app-logo">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <h2>EmergencyCord</h2>
+        <p>Chat de respaldo en tiempo real sin registro. Ingresa tu usuario y entra ya.</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="usernameInput"><i class="fa-solid fa-user"></i> NOMBRE DE USUARIO</label>
+          <input type="text" id="usernameInput" placeholder="Ej: Alex_Dev, Carlos, invitado..." maxlength="24" required autofocus autocomplete="off">
+        </div>
+
+        <div class="avatar-selection">
+          <label><i class="fa-solid fa-robot"></i> TU AVATAR</label>
+          <div class="avatar-preview-box">
+            <img id="avatarPreview" src="https://api.dicebear.com/7.x/bottts/svg?seed=EmergencyCord" alt="Avatar Preview">
+            <button type="button" id="randomAvatarBtn" class="btn-secondary" title="Generar Avatar Aleatorio">
+              <i class="fa-solid fa-dice"></i> Cambiar
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-large">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar a la Sala
+        </button>
+      </form>
+      <div class="login-footer">
+        <span><i class="fa-solid fa-shield-halved"></i> Conexión ultra rápida a tu servidor privado Docker</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Body Layout -->
+  <div id="app" class="app-layout hidden">
+
+    <!-- 1. Server Bar (Far Left) -->
+    <nav class="server-sidebar">
+      <div class="server-icon active" title="EmergencyCord Server">
+        <i class="fa-solid fa-bolt-lightning"></i>
+      </div>
+      <div class="server-separator"></div>
+      <div class="server-status-pill" title="Servidor En Línea">
+        <span class="online-dot"></span>
+      </div>
+    </nav>
+
+    <!-- 2. Channels Sidebar (Left) -->
+    <aside class="channels-sidebar">
+      <div class="server-header">
+        <h3>EmergencyCord <i class="fa-solid fa-circle-check verified-badge"></i></h3>
+        <span class="server-badge">Docker Backup</span>
+      </div>
+
+      <div class="channels-scroll">
+        <!-- Text Channels List -->
+        <div class="channel-category">
+          <span><i class="fa-solid fa-chevron-down"></i> CANALES DE TEXTO</span>
+        </div>
+        <ul id="textChannelsList" class="channel-list">
+          <!-- Populated by JS -->
+        </ul>
+
+        <!-- Voice Channels List -->
+        <div class="channel-category margin-top">
+          <span><i class="fa-solid fa-chevron-down"></i> CANALES DE VOZ (SLOTS ILIMITADOS)</span>
+        </div>
+        <ul id="voiceChannelsList" class="channel-list">
+          <!-- Populated by JS -->
+        </ul>
+      </div>
+
+      <!-- Voice Connected Status Panel (Shown when connected to voice) -->
+      <div id="voiceStatusPanel" class="voice-status-panel hidden">
+        <div class="voice-info">
+          <i class="fa-solid fa-signal voice-signal-icon"></i>
+          <div class="voice-text">
+            <span class="voice-state">Voz Conectada</span>
+            <span id="activeVoiceChannelName" class="voice-channel-name">🔊 Sala de Voz 1</span>
+          </div>
+        </div>
+        <div class="voice-actions">
+          <button id="leaveVoiceBtn" class="btn-icon danger" title="Desconectar Voz">
+            <i class="fa-solid fa-phone-slash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Current User Footer Card -->
+      <div class="user-footer">
+        <div class="user-avatar-wrap">
+          <img id="myAvatarImg" src="" alt="User Avatar">
+          <span class="status-indicator online"></span>
+        </div>
+        <div class="user-details">
+          <span id="myUsername" class="user-name">Usuario</span>
+          <span class="user-tag">#Online</span>
+        </div>
+        <div class="user-controls">
+          <button id="toggleMuteBtn" class="btn-icon-sm" title="Silenciar Micrófono">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          <button id="toggleDeafenBtn" class="btn-icon-sm" title="Ensordecer Sonido">
+            <i class="fa-solid fa-headphones"></i>
+          </button>
+          <button id="openSettingsBtn" class="btn-icon-sm" title="Ajustes de Voz y Sonido">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 3. Main Chat View (Center) -->
+    <main class="chat-main">
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="channel-header-title">
+          <i class="fa-solid fa-hashtag header-icon"></i>
+          <h2 id="currentChannelName">general</h2>
+          <span id="currentChannelTopic" class="channel-topic">Sala principal de conversación</span>
+        </div>
+        <div class="chat-header-actions">
+          <div class="header-status-badge">
+            <span class="online-dot"></span> <span id="onlineCountText">1 usuario</span>
+          </div>
+          <button id="toggleMembersBtn" class="btn-icon-sm" title="Lista de Miembros">
+            <i class="fa-solid fa-users"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Messages Container -->
+      <div id="chatMessages" class="chat-messages-container">
+        <!-- Messages appended by JS -->
+      </div>
+
+      <!-- Typing Indicator -->
+      <div id="typingIndicator" class="typing-indicator hidden">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <span id="typingText">Alguien está escribiendo...</span>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="chat-input-container">
+        <form id="chatForm" class="chat-input-wrapper">
+          <label for="attachmentInput" class="input-btn-icon" title="Adjuntar imagen/archivo">
+            <i class="fa-solid fa-circle-plus"></i>
+            <input type="file" id="attachmentInput" accept="image/*" class="hidden-file-input">
+          </label>
+          
+          <!-- Attachment Preview Box -->
+          <div id="attachmentPreview" class="attachment-preview hidden">
+            <img id="attachmentImg" src="" alt="Adjunto">
+            <button type="button" id="removeAttachmentBtn" class="remove-attachment-btn"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <input type="text" id="messageInput" placeholder="Enviar mensaje a #general..." autocomplete="off">
+          
+          <div class="input-actions">
+            <button type="button" id="emojiPickerBtn" class="input-btn-icon" title="Insertar Emoji">
+              <i class="fa-solid fa-face-smile"></i>
+            </button>
+            <button type="submit" class="btn-send" title="Enviar">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Emoji Popup -->
+        <div id="emojiPicker" class="emoji-picker-popup hidden glass-panel">
+          <div class="emoji-grid">
+            <span>👍</span><span>😂</span><span>🔥</span><span>❤️</span><span>🎉</span>
+            <span>🚀</span><span>😎</span><span>👀</span><span>💯</span><span>🙌</span>
+            <span>💩</span><span>💀</span><span>🤖</span><span>🎮</span><span>⚡</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 4. Members Sidebar (Right) -->
+    <aside id="membersSidebar" class="members-sidebar">
+      <div class="members-header">
+        <span>EN LÍNEA — <span id="onlineMembersCount">1</span></span>
+      </div>
+      <ul id="membersList" class="members-list">
+        <!-- Member items populated by JS -->
+      </ul>
+    </aside>
+
+  </div>
+
+  <!-- Settings Modal (Configuración del Usuario: Voz & Krisp Noise Suppression) -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="settings-card glass-panel">
+      <div class="settings-header">
+        <h3><i class="fa-solid fa-sliders"></i> Ajustes de Voz y Sonido</h3>
+        <button id="closeSettingsBtn" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="settings-body">
+        <!-- Input Device -->
+        <div class="setting-item">
+          <label for="micSelect"><i class="fa-solid fa-microphone"></i> Dispositivo de Entrada (Micrófono)</label>
+          <select id="micSelect" class="form-select">
+            <option value="default">Micrófono Predeterminado del Sistema</option>
+          </select>
+        </div>
+
+        <!-- Voice Activation Mode Selector -->
+        <div class="setting-item">
+          <label><i class="fa-solid fa-headset"></i> Modo de Entrada de Voz</label>
+          <div class="radio-options">
+            <label class="radio-card">
+              <input type="radio" name="inputMode" value="vad" id="modeVAD" checked>
+              <div class="radio-content">
+                <span class="radio-title"><i class="fa-solid fa-wave-square"></i> Activación por Voz Automática</span>
+                <span class="radio-desc">Se transmite automáticamente cuando hablas al micrófono.</span>
+              </div>
+            </label>
+
+            <label class="radio-card">
+              <input type="radio" name="inputMode" value="ptt" id="modePTT">
+              <div class="radio-content">
+                <span class="radio-title"><i class="fa-solid fa-keyboard"></i> Pulsar para Hablar (Push-To-Talk)</span>
+                <span class="radio-desc">Mantén presionada una tecla para transmitir audio.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Push to talk key selector -->
+        <div id="pttKeyGroup" class="setting-item hidden">
+          <label for="pttKeyInput"><i class="fa-solid fa-key"></i> Tecla de Pulsar para Hablar</label>
+          <input type="text" id="pttKeyInput" class="form-input-short" value="Space" readonly>
+          <span class="help-text">Haz clic e ingresa la tecla deseada (ej. Espacio, Control, Shift).</span>
+        </div>
+
+        <!-- Noise Suppression (Krisp WebRTC) -->
+        <div class="setting-item row-between">
+          <div class="setting-text">
+            <span class="setting-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Cancelación de Ruido Inteligente</span>
+            <span class="setting-desc">Elimina el ruido de fondo (teclado, ventiladores) usando procesamiento WebRTC nativo.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="noiseSuppressionToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Echo Cancellation -->
+        <div class="setting-item row-between">
+          <div class="setting-text">
+            <span class="setting-label"><i class="fa-solid fa-volume-xmark"></i> Cancelación de Eco</span>
+            <span class="setting-desc">Evita el retorno de audio de altavoces.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="echoCancellationToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Volume Meter & Test -->
+        <div class="setting-item">
+          <label><i class="fa-solid fa-chart-simple"></i> Prueba de Micrófono</label>
+          <div class="mic-test-container">
+            <div class="mic-meter-bar">
+              <div id="micMeterFill" class="mic-meter-fill"></div>
+            </div>
+            <button id="testMicBtn" class="btn-secondary btn-sm">Probar Micrófono</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="settings-footer">
+        <button id="saveSettingsBtn" class="btn-primary"><i class="fa-solid fa-check"></i> Guardar y Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Elements for UI Sounds -->
+  <audio id="soundJoin" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
+  <audio id="soundMessage" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
+
+  <!-- Socket.IO Client Library -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Main Application JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  emergency-cord:
+    build: .
+    container_name: emergency-cord
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    environment:
+      - PORT=9090
+      - NODE_ENV=production
