@@ -23,21 +23,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/api/version', (req, res) => {
   res.json({
     version: APP_VERSION,
-    downloadUrl: '/download/EmergencyCord-Portable.exe'
+    downloadUrl: '/download/EmergencyCord-Portable.zip'
   });
 });
 
-// Download Route for Windows Standalone Executable
+// Download Route for Windows Standalone Executable / Zip
+app.get('/download/EmergencyCord-Portable.zip', (req, res) => {
+  const zipPath = path.join(__dirname, 'public', 'EmergencyCord-Portable.zip');
+  const distExePath = path.join(__dirname, 'dist', 'EmergencyCord-Portable.exe');
+  
+  if (fs.existsSync(zipPath)) {
+    return res.download(zipPath, 'EmergencyCord-Portable.zip');
+  } else if (fs.existsSync(distExePath)) {
+    return res.download(distExePath, 'EmergencyCord-Portable.exe');
+  } else {
+    return res.status(404).send('El ejecutable comprimido de Windows no está disponible.');
+  }
+});
+
 app.get('/download/EmergencyCord-Portable.exe', (req, res) => {
   const distExePath = path.join(__dirname, 'dist', 'EmergencyCord-Portable.exe');
-  const publicExePath = path.join(__dirname, 'public', 'EmergencyCord-Portable.exe');
+  const zipPath = path.join(__dirname, 'public', 'EmergencyCord-Portable.zip');
   
   if (fs.existsSync(distExePath)) {
     return res.download(distExePath, 'EmergencyCord-Portable.exe');
-  } else if (fs.existsSync(publicExePath)) {
-    return res.download(publicExePath, 'EmergencyCord-Portable.exe');
+  } else if (fs.existsSync(zipPath)) {
+    return res.download(zipPath, 'EmergencyCord-Portable.zip');
   } else {
-    return res.status(404).send('El ejecutable de Windows no está disponible aún en el servidor.');
+    return res.status(404).send('El ejecutable de Windows no está disponible.');
   }
 });
 
